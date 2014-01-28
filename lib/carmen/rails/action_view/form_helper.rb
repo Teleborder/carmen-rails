@@ -24,7 +24,7 @@ module ActionView
       # Returns an `html_safe` string containing the HTML for a select element.
       def subregion_select(object, method, parent_region_or_code, options={}, html_options={})
         parent_region = determine_parent(parent_region_or_code)
-        tag = instance_tag(object, method, self, options.delete(:object))
+        tag = instance_tag(object, method, self, options.delete(:object), options)
         tag.to_region_select_tag(parent_region, options, html_options)
       end
 
@@ -51,7 +51,7 @@ module ActionView
       #   country_select(@object, :region, ['US', 'CA'], class: region)
       #
       # Returns an `html_safe` string containing the HTML for a select element.
-      def country_select(object, method, *args)
+      def country_select(object_name, method, object = nil, *args)
 
         # These contortions are to provide API-compatibility
         priority_countries = args.shift if args.first.is_a?(Array)
@@ -62,7 +62,7 @@ module ActionView
 
         html_options ||= {}
 
-        tag = instance_tag(object, method, self, options.delete(:object))
+        tag = instance_tag(object_name, method, self, object, options)
         tag.to_region_select_tag(Carmen::World.instance, options, html_options)
       end
 
@@ -158,11 +158,12 @@ module ActionView
 
       private
 
-      def instance_tag(object_name, method_name, template_object, options = {})
+      def instance_tag(object_name, method_name, template_object, object, options = {})
         if Rails::VERSION::MAJOR == 3
-          InstanceTag.new(object_name, method_name, template_object, options)
+          InstanceTag.new(object_name, method_name, template_object, object)
         else
-          ActionView::Helpers::Tags::Base.new(object_name, method_name, template_object, options || {})
+          options[:object] = object
+          ActionView::Helpers::Tags::Base.new(object_name, method_name, template_object, options)
         end
       end
 
@@ -226,7 +227,7 @@ module ActionView
       #
       # See `FormOptionsHelper::country_select` for more information.
       def country_select(method, *args)
-        @template.country_select(@object_name, method, *args)
+        @template.country_select(@object_name, method, @object, *args)
       end
 
       # Generate select and subregion option tags with the provided name. A
